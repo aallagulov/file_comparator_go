@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
+	"log"
+	"os"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -50,10 +54,29 @@ func main() {
 	// f1_path := flag.String("f1", "", "path to the 1st file")
 	// f2_path := flag.String("f2", "", "path to the 2nd file")
 
-	str1 := "asd\t qwe zxc\n asd"
-	str2 := "asd cat  tac asd"
+	// Make a Regex to say we only want letters and numbers
+	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	sl1 := strings.Fields(str1)
+	file, err := os.Open("t/data/Crime&Punishment.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanWords)
+
+	sl1 := make([]string, 0, 0)
+	for scanner.Scan() {
+		word := scanner.Text()
+		processedWord := reg.ReplaceAllString(word, "")
+		sl1 = append(sl1, processedWord)
+	}
+
+	str2 := "asd cat  tac asd"
 	sl2 := strings.Fields(str2)
 
 	fmt.Println(sl1)
