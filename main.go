@@ -43,9 +43,9 @@ func (c *SafeCounter) Stat() string {
 	sort.Sort(sort.Reverse(sort.IntSlice(counters)))
 
 	b := new(bytes.Buffer)
-	for i := 0; i < len(counters); i++ {
+	for i := 0; i < 10; i++ {
 		counter := counters[i]
-		fmt.Fprintf(b, "%s=\t%d\n", countersMap[counter], counter)
+		fmt.Fprintf(b, "%s\t%d\n", countersMap[counter], counter)
 	}
 	return b.String()
 }
@@ -79,9 +79,6 @@ func main() {
 	str2 := "asd cat  tac asd"
 	sl2 := strings.Fields(str2)
 
-	fmt.Println(sl1)
-	fmt.Println(sl2)
-
 	var wg sync.WaitGroup
 	wg.Add(2)
 
@@ -90,7 +87,6 @@ func main() {
 	countFunc := func(words []string) {
 		defer wg.Done()
 		for i := 0; i < len(words); i++ {
-			fmt.Println(words[i])
 			c.Inc(words[i])
 		}
 	}
