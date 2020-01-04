@@ -8,9 +8,11 @@ import (
 	"os"
 	"regexp"
 	"sort"
-	"strings"
 	"sync"
 )
+
+// Make a Regex to say we only want letters and numbers
+var reg = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 // SafeCounter is safe to use concurrently.
 type SafeCounter struct {
@@ -23,12 +25,6 @@ func (c *SafeCounter) Inc(key string) {
 	c.v[key]++
 	c.mux.Unlock()
 }
-
-// func (c *SafeCounter) Value(key string) int {
-// 	c.mux.Lock()
-// 	defer c.mux.Unlock()
-// 	return c.v[key]
-// }
 
 func (c *SafeCounter) Stat() string {
 	// we need to return the result sorted by values
@@ -51,33 +47,8 @@ func (c *SafeCounter) Stat() string {
 }
 
 func main() {
-	// f1_path := flag.String("f1", "", "path to the 1st file")
-	// f2_path := flag.String("f2", "", "path to the 2nd file")
-
-	// Make a Regex to say we only want letters and numbers
-	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	file, err := os.Open("t/data/Crime&Punishment.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanWords)
-
-	sl1 := make([]string, 0, 0)
-	for scanner.Scan() {
-		word := scanner.Text()
-		processedWord := reg.ReplaceAllString(word, "")
-		sl1 = append(sl1, processedWord)
-	}
-
-	str2 := "asd cat  tac asd"
-	sl2 := strings.Fields(str2)
+	sl1 := readFile("t/data/Crime&Punishment.txt")
+	sl2 := readFile("t/data/War&Peace.txt")
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -97,4 +68,24 @@ func main() {
 	wg.Wait()
 
 	fmt.Println(c.Stat())
+}
+
+func readFile(filePath string) []string {
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanWords)
+
+	slice := make([]string, 0, 0)
+	for scanner.Scan() {
+		word := scanner.Text()
+		processedWord := reg.ReplaceAllString(word, "")
+		slice = append(slice, processedWord)
+	}
+
+	return slice
 }
