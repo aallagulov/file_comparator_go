@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -52,17 +53,34 @@ func (c *SafeCounter) Stat(out io.Writer, outLimit int) {
 }
 
 func main() {
+	var filePath1, filePath2, outLimit = getCLIParams()
+
 	var wg sync.WaitGroup
 	wg.Add(2)
 
 	c := SafeCounter{v: make(map[string]int)}
 
-	go readFile(&wg, &c, "t/data/Crime&Punishment.txt")
-	go readFile(&wg, &c, "t/data/War&Peace.txt")
+	go readFile(&wg, &c, filePath1)
+	go readFile(&wg, &c, filePath2)
 
 	wg.Wait()
 
-	c.Stat(os.Stdout, 0)
+	c.Stat(os.Stdout, outLimit)
+}
+
+func getCLIParams() (string, string, int) {
+	filePath1 := flag.String("f1", "", "path to the 1st file")
+	filePath2 := flag.String("f2", "", "path to the 2nd file")
+	outLimit := flag.Int("n", 10, "limit for outputted lines")
+
+	flag.Parse()
+
+	if *filePath1 == "" || *filePath2 == "" {
+		fmt.Println("Please specify both -f1 and -f2 paths to comparing files")
+		os.Exit(1)
+	}
+
+	return *filePath1, *filePath2, *outLimit
 }
 
 func readFile(wg *sync.WaitGroup, c *SafeCounter, filePath string) {
