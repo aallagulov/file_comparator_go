@@ -2,8 +2,8 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"regexp"
@@ -26,7 +26,7 @@ func (c *SafeCounter) Inc(key string) {
 	c.mux.Unlock()
 }
 
-func (c *SafeCounter) Stat() string {
+func (c *SafeCounter) Stat(out io.Writer) {
 	// we need to return the result sorted by values
 	wordFrequencies := c.v
 	countersMap := make(map[int]string, len(wordFrequencies))
@@ -38,12 +38,10 @@ func (c *SafeCounter) Stat() string {
 
 	sort.Sort(sort.Reverse(sort.IntSlice(counters)))
 
-	b := new(bytes.Buffer)
 	for i := 0; i < 10; i++ {
 		counter := counters[i]
-		fmt.Fprintf(b, "%s\t%d\n", countersMap[counter], counter)
+		fmt.Fprintf(out, "%s\t%d\n", countersMap[counter], counter)
 	}
-	return b.String()
 }
 
 func main() {
@@ -57,7 +55,7 @@ func main() {
 
 	wg.Wait()
 
-	fmt.Println(c.Stat())
+	c.Stat(os.Stdout)
 }
 
 func readFile(wg *sync.WaitGroup, c *SafeCounter, filePath string) {
