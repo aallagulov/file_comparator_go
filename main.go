@@ -47,30 +47,21 @@ func (c *SafeCounter) Stat() string {
 }
 
 func main() {
-	sl1 := readFile("t/data/Crime&Punishment.txt")
-	sl2 := readFile("t/data/War&Peace.txt")
-
 	var wg sync.WaitGroup
 	wg.Add(2)
 
 	c := SafeCounter{v: make(map[string]int)}
 
-	countFunc := func(words []string) {
-		defer wg.Done()
-		for i := 0; i < len(words); i++ {
-			c.Inc(words[i])
-		}
-	}
-
-	go countFunc(sl1)
-	go countFunc(sl2)
+	go readFile(&wg, &c, "t/data/Crime&Punishment.txt")
+	go readFile(&wg, &c, "t/data/War&Peace.txt")
 
 	wg.Wait()
 
 	fmt.Println(c.Stat())
 }
 
-func readFile(filePath string) []string {
+func readFile(wg *sync.WaitGroup, c *SafeCounter, filePath string) {
+	defer wg.Done()
 	file, err := os.Open(filePath)
 	if err != nil {
 		log.Fatal(err)
@@ -80,12 +71,14 @@ func readFile(filePath string) []string {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanWords)
 
-	slice := make([]string, 0, 0)
+	words := make([]string, 0, 0)
 	for scanner.Scan() {
 		word := scanner.Text()
 		processedWord := reg.ReplaceAllString(word, "")
-		slice = append(slice, processedWord)
+		words = append(words, processedWord)
 	}
 
-	return slice
+	for i := 0; i < len(words); i++ {
+		c.Inc(words[i])
+	}
 }
