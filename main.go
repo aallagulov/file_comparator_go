@@ -71,14 +71,9 @@ func readFile(wg *sync.WaitGroup, c *SafeCounter, filePath string) {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanWords)
 
-	words := make([]string, 0, 0)
 	for scanner.Scan() {
 		word := scanner.Text()
 		processedWord := reg.ReplaceAllString(word, "")
-		words = append(words, processedWord)
-	}
-
-	for i := 0; i < len(words); i++ {
-		c.Inc(words[i])
+		c.Inc(processedWord)
 	}
 }
