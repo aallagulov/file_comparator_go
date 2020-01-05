@@ -26,7 +26,7 @@ func (c *SafeCounter) Inc(key string) {
 	c.mux.Unlock()
 }
 
-func (c *SafeCounter) Stat(out io.Writer) {
+func (c *SafeCounter) Stat(out io.Writer, outLimit int) {
 	// we need to return the result sorted by values
 	wordFrequencies := c.v
 	countersMap := make(map[int]string, len(wordFrequencies))
@@ -38,7 +38,14 @@ func (c *SafeCounter) Stat(out io.Writer) {
 
 	sort.Sort(sort.Reverse(sort.IntSlice(counters)))
 
-	for i := 0; i < 10; i++ {
+	wordsAmount := len(counters)
+	var limit int
+	if outLimit > 0 && wordsAmount > outLimit {
+		limit = outLimit
+	} else {
+		limit = wordsAmount
+	}
+	for i := 0; i < limit; i++ {
 		counter := counters[i]
 		fmt.Fprintf(out, "%s\t%d\n", countersMap[counter], counter)
 	}
@@ -55,7 +62,7 @@ func main() {
 
 	wg.Wait()
 
-	c.Stat(os.Stdout)
+	c.Stat(os.Stdout, 0)
 }
 
 func readFile(wg *sync.WaitGroup, c *SafeCounter, filePath string) {

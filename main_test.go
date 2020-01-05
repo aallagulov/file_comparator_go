@@ -29,7 +29,7 @@ func TestReadFileWarAndPeace(t *testing.T) {
 	wg.Wait()
 
 	out := new(bytes.Buffer)
-	c.Stat(out)
+	c.Stat(out, 10)
 
 	result := out.String()
 	if result != expectedWarAndPeaceResult {
@@ -60,7 +60,7 @@ func TestReadFileCrimeAndPunishment(t *testing.T) {
 	wg.Wait()
 
 	out := new(bytes.Buffer)
-	c.Stat(out)
+	c.Stat(out, 10)
 
 	result := out.String()
 	if result != expectedCrimeAndPunishmentResult {
@@ -92,10 +92,66 @@ func TestReadBothBooks(t *testing.T) {
 	wg.Wait()
 
 	out := new(bytes.Buffer)
-	c.Stat(out)
+	c.Stat(out, 10)
 
 	result := out.String()
 	if result != expectedBothBooksResult {
 		t.Errorf("test for OK Failed - results not match\nGot:\n%v\nExpected:\n%v", result, expectedBothBooksResult)
+	}
+}
+
+func TestReadEmptyFile(t *testing.T) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	c := SafeCounter{v: make(map[string]int)}
+
+	go readFile(&wg, &c, "t/data/empty.txt")
+
+	wg.Wait()
+
+	out := new(bytes.Buffer)
+	c.Stat(out, 0)
+
+	result := out.String()
+	if result != "" {
+		t.Errorf("test for OK Failed - results not match\nGot:\n%v\nExpected:\n%v", result, "")
+	}
+}
+
+func TestReadNonexistentFile(t *testing.T) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	c := SafeCounter{v: make(map[string]int)}
+
+	go readFile(&wg, &c, "t/data/nonexistent.txt")
+
+	wg.Wait()
+
+	out := new(bytes.Buffer)
+	c.Stat(out, 0) // gracefully rejecting by fatal error lol
+}
+
+const expectedDummyResult = `aaa	200000
+`
+
+func TestReadDummyFile(t *testing.T) {
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	c := SafeCounter{v: make(map[string]int)}
+
+	go readFile(&wg, &c, "t/data/aaa1.txt")
+	go readFile(&wg, &c, "t/data/aaa2.txt")
+
+	wg.Wait()
+
+	out := new(bytes.Buffer)
+	c.Stat(out, 0)
+
+	result := out.String()
+	if result != expectedDummyResult {
+		t.Errorf("test for OK Failed - results not match\nGot:\n%v\nExpected:\n%v", result, expectedDummyResult)
 	}
 }
