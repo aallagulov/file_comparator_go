@@ -1,12 +1,18 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
+	"log"
+	"os"
+	"regexp"
 	"sort"
-	"strings"
 	"sync"
 )
+
+// Make a Regex to say we only want letters and numbers
+var reg = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 // SafeCounter is safe to use concurrently.
 type SafeCounter struct {
@@ -19,12 +25,6 @@ func (c *SafeCounter) Inc(key string) {
 	c.v[key]++
 	c.mux.Unlock()
 }
-
-// func (c *SafeCounter) Value(key string) int {
-// 	c.mux.Lock()
-// 	defer c.mux.Unlock()
-// 	return c.v[key]
-// }
 
 func (c *SafeCounter) Stat() string {
 	// we need to return the result sorted by values
@@ -39,25 +39,16 @@ func (c *SafeCounter) Stat() string {
 	sort.Sort(sort.Reverse(sort.IntSlice(counters)))
 
 	b := new(bytes.Buffer)
-	for i := 0; i < len(counters); i++ {
+	for i := 0; i < 10; i++ {
 		counter := counters[i]
-		fmt.Fprintf(b, "%s=\t%d\n", countersMap[counter], counter)
+		fmt.Fprintf(b, "%s\t%d\n", countersMap[counter], counter)
 	}
 	return b.String()
 }
 
 func main() {
-	// f1_path := flag.String("f1", "", "path to the 1st file")
-	// f2_path := flag.String("f2", "", "path to the 2nd file")
-
-	str1 := "asd\t qwe zxc\n asd"
-	str2 := "asd cat  tac asd"
-
-	sl1 := strings.Fields(str1)
-	sl2 := strings.Fields(str2)
-
-	fmt.Println(sl1)
-	fmt.Println(sl2)
+	sl1 := readFile("t/data/Crime&Punishment.txt")
+	sl2 := readFile("t/data/War&Peace.txt")
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -67,7 +58,6 @@ func main() {
 	countFunc := func(words []string) {
 		defer wg.Done()
 		for i := 0; i < len(words); i++ {
-			fmt.Println(words[i])
 			c.Inc(words[i])
 		}
 	}
@@ -78,4 +68,24 @@ func main() {
 	wg.Wait()
 
 	fmt.Println(c.Stat())
+}
+
+func readFile(filePath string) []string {
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanWords)
+
+	slice := make([]string, 0, 0)
+	for scanner.Scan() {
+		word := scanner.Text()
+		processedWord := reg.ReplaceAllString(word, "")
+		slice = append(slice, processedWord)
+	}
+
+	return slice
 }
